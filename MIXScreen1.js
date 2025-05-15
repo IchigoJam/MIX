@@ -23,7 +23,9 @@ export class MIXScreen1 extends HTMLElement {
     const cellSize = 8;
 
     // フォントROM: 256文字 × 8バイト = 2048バイト
-    const font = await (await fetch("./ichigojam-font.bin")).bytes();
+    //const fn = "./ichigojam-font.bin";
+    const fn = "https://ichigojam.github.io/font/ichigojam-font.bin";
+    const font = await (await fetch(fn)).bytes();
     const fontROM = new Uint8Array(font);
 
     // テキストVRAM
