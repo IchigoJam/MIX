@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>MIX</title></head><body>
+<h1>MIX</h1>
+<style>
+body {
+  text-align: center;
+  background-color: #f8f8f8;
+}
+canvas {
+  width: 512px;
+  height: 384px;
+  border: 8px solid black;
+}
+a {
+  color: gray !important;
+}
+</style>
+</head>
+<body>
+
+<main id=main></main>
+
+<a href=https://github.com/ichigojam/MIX/>src on GitHub</a>
+
+<script type="module">
+import { MIXCanvas } from "./MIXCanvas.js";
+
+const mix = new MIXCanvas();
+main.appendChild(mix);
+
+const params = new URLSearchParams(window.location.search);
+const s = params.get("rom") ?? "kawakudari.rom";
+if (s.endsWith(".rom")) {
+  const fn = s;
+  const rom = await (await fetch(fn)).bytes();
+  mix.value = rom;
+} else {
+  mix.value = s;
+}
+await mix.run();
+
+</script>
+</body>
+</html>
