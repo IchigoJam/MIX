@@ -1,18 +1,13 @@
+import ichigojamfont from "https://ichigojam.github.io/font/ichigojam-font.bin.js";
+
 export class MIXScreen1 extends HTMLElement {
-  constructor(canvas, fontROM, textVRAM) {
+  constructor() {
     super();
-    this.appendChild(canvas);
-    this.canvas = canvas;
-    this.fontROM = fontROM;
-    this.textVRAM = textVRAM;
-  }
-  draw() {
-    this.canvas.draw();
-  }
-  static async create() {
+
     const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 192;
+    canvas.style.imageRendering = "pixelated";
     const gl = canvas.getContext("webgl2");
     if (!gl) {
       alert("WebGL2 not supported");
@@ -24,9 +19,12 @@ export class MIXScreen1 extends HTMLElement {
 
     // フォントROM: 256文字 × 8バイト = 2048バイト
     //const fn = "./ichigojam-font.bin";
+    /*
     const fn = "https://ichigojam.github.io/font/ichigojam-font.bin";
     const font = await (await fetch(fn)).bytes();
     const fontROM = new Uint8Array(font);
+    */
+    const fontROM = ichigojamfont;
 
     // テキストVRAM
     const textVRAM = new Uint8Array(cols * rows);
@@ -132,7 +130,14 @@ export class MIXScreen1 extends HTMLElement {
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
     }
-    return new MIXScreen1(canvas, fontROM, textVRAM);
+
+    this.appendChild(canvas);
+    this.canvas = canvas;
+    this.fontROM = fontROM;
+    this.textVRAM = textVRAM;
+  }
+  draw() {
+    this.canvas.draw();
   }
 }
 

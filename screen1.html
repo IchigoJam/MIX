@@ -7,7 +7,6 @@ body {
   background-color: #f8f8f8;
 }
 canvas {
-  image-rendering: pixelated;
   width: 512px;
   height: 384px;
   border: 8px solid black;
@@ -39,7 +38,7 @@ a {
 <pre><code>import { MIXScreen1 } from "./MIXScreen1.js";
 import { rnd } from "https://js.sabae.cc/rnd.js";
 
-const scr1 = await MIXScreen1.create();
+const scr1 = new MIXScreen1();
 main.appendChild(scr1);
 
 const draw = () =&gt; {
@@ -67,7 +66,7 @@ draw();
 import { MIXScreen1 } from "./MIXScreen1.js";
 import { rnd } from "https://js.sabae.cc/rnd.js";
 
-const scr1 = await MIXScreen1.create();
+const scr1 = new MIXScreen1();
 main.appendChild(scr1);
 
 const draw = () => {
