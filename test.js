@@ -4,7 +4,7 @@ const fn = "hello.rom";
 //const fn = "kawakudari.rom";
 const rom = await Deno.readFile(fn);
 
-const mem = new Array(64 * 1024);
+const mem = new Uint8Array(64 * 1024);
 const readUint16 = (ad) => {
   return mem[ad] | (mem[ad + 1] << 8);
 };
@@ -31,9 +31,7 @@ const z80 = new Z80({
   },
 });
 
-for (let i = 0; i < rom.length; i++) {
-  mem[0x4000 + i] = rom[i];
-}
+mem.set(rom, 0x4000);
 if (readUint16(0x4000) != 0x4241) {
   throw new Error("not MSX ROM id 'AB'");
 }
@@ -64,9 +62,9 @@ const bios = (st) => {
 };
 
 for (let i = 0;; i++) {
-  const st = z80.getState();
   //console.log(st);
   z80.run_instruction();
+  const st = z80.getState();
   if (bios(st)) {
     z80.setState(st);
   }
