@@ -1,0 +1,92 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>MIX SCREEN 1 DEMO by WebGL</title></head><body>
+<h1>MIX SCREEN 1 DEMO by WebGL</h1>
+<style>
+body {
+  text-align: center;
+  background-color: #f8f8f8;
+}
+canvas {
+  image-rendering: pixelated;
+  width: 512px;
+  height: 384px;
+  border: 8px solid black;
+  display: inline-block;
+}
+pre {
+  text-align: left;
+  background: #2d2d2d;          /* ダーク背景 */
+  color: #f8f8f2;               /* 明るい文字 */
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  line-height: 1.2;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+}
+a {
+  color: gray !important;
+}
+</style>
+</head>
+<body>
+
+<main id=main></main>
+
+<pre><code>import { MIXScreen1 } from "./MIXScreen1.js";
+import { rnd } from "https://js.sabae.cc/rnd.js";
+
+const scr1 = await MIXScreen1.create();
+main.appendChild(scr1);
+
+const draw = () =&gt; {
+  const fontROM = scr1.fontROM;
+  const textVRAM = scr1.textVRAM;
+
+  const n = 10;
+  for (let i = 0; i &lt; n; i++) {
+    textVRAM[rnd(textVRAM.length)] = rnd(256);
+  }
+  const m = rnd(256);
+  for (let i = 0; i &lt; 8; i++) {
+    fontROM[m * 8 + i] ^= 0xff;
+  }
+  
+  scr1.draw();
+  requestAnimationFrame(draw);
+};
+draw();
+</code></pre>
+
+<a href=https://github.com/ichigojam/MIX/>src on GitHub</a>
+
+<script type="module">
+import { MIXScreen1 } from "./MIXScreen1.js";
+import { rnd } from "https://js.sabae.cc/rnd.js";
+
+const scr1 = await MIXScreen1.create();
+main.appendChild(scr1);
+
+const draw = () => {
+  const fontROM = scr1.fontROM;
+  const textVRAM = scr1.textVRAM;
+
+  const n = 10;
+  for (let i = 0; i < n; i++) {
+    textVRAM[rnd(textVRAM.length)] = rnd(256);
+  }
+  const m = rnd(256);
+  for (let i = 0; i < 8; i++) {
+    fontROM[m * 8 + i] ^= 0xff;
+  }
+  
+  scr1.draw();
+  requestAnimationFrame(draw);
+};
+draw();
+</script>
+</body>
+</html>
