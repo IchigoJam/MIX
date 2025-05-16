@@ -129,7 +129,7 @@ export class MIXCanvas extends HTMLElement {
     const z80 = this.z80;
     const scr1 = this.scr1;
     let sumclk = 0;
-    const clkperframe = 3500;
+    const clkperframe = 35000;
     for (let i = 0;; i++) {
       const clk = z80.run_instruction();
       sumclk += clk;
