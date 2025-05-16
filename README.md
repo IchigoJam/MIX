@@ -27,7 +27,7 @@ deno -A https://ichigojam.github.io/MIX/rom2url.js hello.rom
 ### rom3sh for Mac
 
 ```sh
-deno -A https://ichigojam.github.io/MIX/rom2sh.js hello.rom | sh
+deno --allow-read --allow-import https://ichigojam.github.io/MIX/rom2sh.js hello.rom | sh
 ```
 
 ## refernce
