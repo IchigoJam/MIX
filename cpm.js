@@ -97,15 +97,6 @@ const getFCB = (st) => {
 };
 
 const bios = (st) => {
-  /*
-  BIOS emulate
-  0x005F CHGMOD - スクリーンモード切替
-  0x00C3 CLS - 画面全体をクリア
-  0x00A2 BIOSの CHPUT
-  0x00D5 INKEY ; ret a: 1=up, 2=right up, 3=right, 4=right down, 5=down, 6=left down, 7=left, 8=left up
-  0x00C6 POSIT locate: ; H: x, L: y
-  0x004A RDVRM HL - Address read, ret a
-  */
   if (st.pc == 0x05) { // BDOS
     if (st.c == 2) {
       putc(st.e);
@@ -197,12 +188,6 @@ const bios = (st) => {
     }
     // console.log("unsupported BDOS", st.c, st.a, st.e);
     return false;
-  } else if (st.pc == 0x5f) {
-    console.log("CHGMOD", st.a);
-  } else if (st.pc == 0xc3) {
-    console.log("clear");
-  } else if (st.pc == 0xA2) { // CHPUT
-    console.log("CHPUT", String.fromCharCode(st.a), st.a);
   }
   return false;
 };
