@@ -186,7 +186,6 @@ const bios = (st) => {
     } else {
       console.log("unsupported BDOS", st.c, st.a, st.e);
     }
-    // console.log("unsupported BDOS", st.c, st.a, st.e);
     return false;
   }
   return false;
