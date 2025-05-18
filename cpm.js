@@ -134,7 +134,7 @@ const bios = (st) => {
       */
     } else if (st.c == 33) { // (F_READRAND) - Random access read record
       const fcb = getFCB(st);
-      //console.log(fcb);
+      //console.log("raedrand", fcb);
       try {
         const data = Deno.readFileSync(fcb.fn);
         const len = 1024;
@@ -161,15 +161,29 @@ const bios = (st) => {
     } else if (st.c == 34) { //  (F_WRITERAND) - Random access write record
       const fcb = getFCB(st);
       //console.log("writerand", fcb);
-      const len = 1024;
+      const len = 128;
       const data = mem.subarray(addrDMA, addrDMA + len);
       //console.log("data", data);
+      const off = fcb.nrec * 128;
       mem[fcb.de + 13] = fcb.nrec + 1;
       st.a = 0;
       st.b = 0;
       st.h = 0;
       st.l = 0;
-      Deno.writeFileSync(fcb.fn, data);
+      try {
+        const bin = Deno.readFileSync(fcb.fn);
+        if (off + data.length <= bin.length) {
+          bin.set(data, off);
+          Deno.writeFileSync(fcb.fn, bin);
+        } else {
+          const bin2 = new Uint8Array(bin.length + data.length);
+          bin2.set(bin, 0);
+          bin2.set(data, bin.length);
+          Deno.writeFileSync(fcb.fn, bin2);
+        }
+      } catch (e) {
+        Deno.writeFileSync(fcb.fn, data);
+      }
       return true;
     } else if (st.c == 16) { // (F_CLOSE) - Close file
       st.a = 0; // success
