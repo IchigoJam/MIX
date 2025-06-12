@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>vdp-test</title>
+</head><body>
+<h1>vdp-test</h1>
+
+<main id=main></main>
+
+<hr>
+<a href=https://github.com/IchigoJam/MIX>src on GitHub</a><br>
+
+<style>
+vdp-screen1 canvas {
+  width: 512px;
+}
+</style>
+
+<script type="module">
+import { VDPScreen1 } from "./VDPScreen1.js";
+import ichigojamfont from "https://ichigojam.github.io/font/ichigojam-font.bin.js";
+import { Z80 } from "https://ichigojam.github.io/Z80.js/Z80.js";
+
+//const fn = "hello.rom";
+//const fn = "kawakudari.rom";
+//const fn = "vdp.rom";
+const fn = "vsync.rom";
+//const fn = "keyboard.rom";
+const rom = await (await fetch(fn)).bytes();
+
+const nobios = await (await fetch("no-bios.rom")).bytes();
+
+const mem = new Uint8Array(64 * 1024);
+const readUint16 = (ad) => {
+  return mem[ad] | (mem[ad + 1] << 8);
+};
+mem.set(nobios, 0);
+mem.set(rom, 0x4000);
+if (readUint16(0x4000) != 0x4241) {
+  throw new Error("not MSX ROM id 'AB'");
+}
+//const entry = readUint16(0x4002);
+
+const vdp = new VDPScreen1();
+/*
+vdp.fontROM.set(ichigojamfont, 0);
+for (let i = 0; i < vdp.textVRAM.length; i++) {
+  vdp.textVRAM[i] = i;
+}
+*/
+main.appendChild(vdp);
+
+const z80 = new Z80({
+  mem_read: (address) => {
+    //console.log("mem_read", address.toString(16));
+    return mem[address];
+  },
+  mem_write: (address, value) => {
+    //console.log("mem_write", address.toString(16), value);
+    mem[address] = value;
+  },
+  io_read: (port) => {
+    port &= 0xff;
+    //console.log("io read", port);
+    return 0;
+  },
+  reg_value: null,
+  vram_addr: 0,
+  reg: new Uint8Array(8),
+  io_write: function (port, value) {
+    //port &= 0xff;
+    //console.log("io write", port, value);
+    if (port == 0x99) {
+      if (this.reg_value === null) {
+        this.reg_value = value;
+      } else {
+        if (value & 0x80) {
+          const nreg = value & 0x7f;
+          this.reg[nreg] = this.reg_value;
+          //console.log("regw", nreg, this.reg_value);
+          this.reg_value = null;
+        } else if (value & 0x40) { // vram write
+          this.vram_addr = ((value & 0x3f) << 8) | this.reg_value;
+          //console.log("addr", this.vram_addr.toString(16));
+        }
+      }
+    } else if (port == 0x98) {
+      //console.log("varm", this.vram_addr.toString(16), value);
+      const ad = this.vram_addr;
+      if (ad >= 0 && ad <= 2048) {
+        vdp.fontROM[ad] = value;
+      } else if (ad >= 0x1800 && ad <= 0x1800 + 768) {
+        vdp.textVRAM[ad - 0x1800] = value;
+      }
+      this.vram_addr++;
+    }
+  },
+});
+
+const st = z80.getState();
+//st.pc = entry;
+//console.log("entry", entry.toString(16));
+st.imode = 1;
+z80.setState(st);
+
+/*
+Z80のクロック：3.579545 MHz
+VDPは垂直同期（VBlank）ごとに割り込み（INT）をZ80に発行 VDPのレジスタ0セット
+Z80は通常、1フレーム ≒ 約59,959 Tステート ≒ 60Hz周期を基準に動作
+*/
+
+const z80freq = 3.579545; // MHz
+const fps = 60;
+const clkperframe = (z80freq / fps * 1000000) >> 0;
+//console.log(clkperframe); // 59659.083333333336
+
+const waitVSync = async () => new Promise(resolve => requestAnimationFrame(resolve));
+
+let sumclk = 0;
+for (;;) {
+  const clk = z80.run_instruction();
+  sumclk += clk;
+  if (sumclk > clkperframe) {
+    vdp.draw();
+    await waitVSync();
+    sumclk -= clkperframe;
+    const st0 = z80.getState();
+    st0.iff1 = 1;
+    z80.setState(st0);
+    z80.interrupt(false);
+
+    /*
+    const st = z80.getState();
+    console.log("pc", st.pc.toString(16), st.iff1)
+    if (st.pc == 0x38) {
+      console.log("int", clkperframe, sumclk)
+    }
+    */
+  }
+  //const st = z80.getState();
+  //console.log(st.pc)
+}
+
+
+</script>

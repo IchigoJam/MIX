@@ -8,6 +8,7 @@ MIX is a compact Z80 emulator with support for MSX BIOS (It's still a work in pr
 - [MIX SCREEN1 DEMO](https://ichigojam.github.io/MIX/screen1.html)
 - [MIX web](https://ichigojam.github.io/MIX/)
 - [IchigoJam_BASIC for CP/M](cpm.js) with [IchigoJam_BASIC.com](IchigoJam_BASIC.com) from [IchigoJam_firm](https://github.com/IchigoJam/ichigojam-firm) for console/z88dk
+- [vdp-test](https://ichigojam.github.io/MIX/vdp-test.html) with [NO-BIOS](https://github.com/IchigoJam/no-bios)
 
 ## usage
 
