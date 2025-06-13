@@ -58,7 +58,7 @@ const keys = [
   KEY_TEN_ASTER, KEY_TEN_PLUS, KEY_TEN_SLASH, KEY_TEN_0, KEY_TEN_1, KEY_TEN_2, KEY_TEN_3, KEY_TEN_4,
   KEY_TEN_5, KEY_TEN_6, KEY_TEN_7, KEY_TEN_8, KEY_TEN_9, KEY_TEN_MINUS, KEY_TEN_COMMA, KEY_TEN_PERIOD,
 ];
-console.log("keys", keys);
+//console.log("keys", keys);
 
 const char2n = (c) => {
   const code = c.charCodeAt(0);
