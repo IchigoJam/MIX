@@ -4,7 +4,9 @@
 
 ## dev memo
 
-- [vdp-test](https://ichigojam.github.io/MIX/vdp-test.html) with [NO-BIOS](https://github.com/IchigoJam/no-bios)
+with [NO-BIOS](https://github.com/IchigoJam/no-bios)
+- [vdp-test](https://ichigojam.github.io/MIX/vdp-test.html)
+- [kbd-test](https://ichigojam.github.io/MIX/kbd-test.html)
 
 ### BIOS compatible version
 

@@ -118,9 +118,42 @@ export class VDPScreen1 extends HTMLElement {
     this.appendChild(canvas);
     this.canvas = canvas;
     canvas.draw();
+
+    this.reg_value = null;
+    this.vram_addr = 0;
+    this.reg = new Uint8Array(8);
   }
   draw() {
     this.canvas.draw();
+  }
+  io_write(port, value) {
+    if (port == 0x99) {
+      if (this.reg_value === null) {
+        this.reg_value = value;
+      } else {
+        if (value & 0x80) {
+          const nreg = value & 0x7f;
+          this.reg[nreg] = this.reg_value;
+          //console.log("regw", nreg, this.reg_value);
+          this.reg_value = null;
+        } else if (value & 0x40) { // vram write
+          this.vram_addr = ((value & 0x3f) << 8) | this.reg_value;
+          //console.log("addr", this.vram_addr.toString(16));
+        }
+      }
+    } else if (port == 0x98) {
+      //console.log("varm", this.vram_addr.toString(16), value);
+      const ad = this.vram_addr;
+      if (ad >= 0 && ad <= 2048) {
+        this.fontROM[ad] = value;
+      } else if (ad >= 0x1800 && ad <= 0x1800 + 768) {
+        this.textVRAM[ad - 0x1800] = value;
+      }
+      this.vram_addr++;
+    }
+  }
+  io_read(port) {
+    return undefined;
   }
 }
 
