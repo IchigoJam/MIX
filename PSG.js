@@ -10,7 +10,6 @@ export class PSG {
     this.context = new AudioContext({ sampleRate });
     this.ay38910 = await AY38910Node.create(this.context);
     this.ay38910.connect(this.context.destination);
-    console.log("startsound", this.ay38910)
   }
   async stopSound() {
     if (!this.ay38910) return;
@@ -27,7 +26,7 @@ export class PSG {
     } else if (port == 0xA1) {
       this.reg_psg[this.reg_psg_write] = value;
       if (this.ay38910) {
-        console.log("psg ", this.reg_psg, value);
+        //console.log("psg ", this.reg_psg, value);
         this.ay38910.writeRegs(this.reg_psg);
       }
     }

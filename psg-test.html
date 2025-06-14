@@ -5,7 +5,7 @@
 
 <main id=main></main>
 <br>
-<button id=btn_reset>reset</button><br>
+<button id=btn_reset>reset</button>
 <button id=btn_soundon>sound on</button> <button id=btn_soundoff>sound off</button><br>
 <hr>
 <a href=https://github.com/IchigoJam/MIX>src on GitHub</a><br>
@@ -23,6 +23,7 @@ import { Keyboard } from "./Keyboard.js";
 import { PSG } from "./PSG.js";
 import { z80disasm } from "https://code4fukui.github.io/z80js/z80disasm.js";
 import { sleep } from "https://js.sabae.cc/sleep.js";
+import { extendsPromise } from "./extendsPromise.js";
 
 //const fn = "vdp.rom";
 //const fn = "vsync.rom";
@@ -110,14 +111,15 @@ const run = async () => {
   }
   running = false;
 };
-run();
 
-btn_reset.onclick = () => {
-  if (running) {
+let p = extendsPromise(run());
+
+btn_reset.onclick = async () => {
+  if (p.isPending()) {
     running = false;
-  } else {
-    run();
+    await p.promise;
   }
+  p = extendsPromise(run());
 };
 
 </script>
