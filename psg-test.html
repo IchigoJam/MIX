@@ -1,0 +1,123 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>psg-test</title>
+</head><body>
+<h1>psg-test</h1>
+
+<main id=main></main>
+<br>
+<button id=btn_reset>reset</button><br>
+<button id=btn_soundon>sound on</button> <button id=btn_soundoff>sound off</button><br>
+<hr>
+<a href=https://github.com/IchigoJam/MIX>src on GitHub</a><br>
+
+<style>
+vdp-screen1 canvas {
+  width: 512px;
+}
+</style>
+
+<script type="module">
+import { Z80 } from "https://ichigojam.github.io/Z80.js/Z80.js";
+import { VDPScreen1 } from "./VDPScreen1.js";
+import { Keyboard } from "./Keyboard.js";
+import { PSG } from "./PSG.js";
+import { z80disasm } from "https://code4fukui.github.io/z80js/z80disasm.js";
+import { sleep } from "https://js.sabae.cc/sleep.js";
+
+//const fn = "vdp.rom";
+//const fn = "vsync.rom";
+//const fn = "keyboard.rom";
+//const fn = "psg1.rom";
+const fn = "psg2.rom";
+//const fn = "psg.rom";
+
+const mem = new Uint8Array(64 * 1024);
+const nobios = await (await fetch("no-bios.rom")).bytes();
+mem.set(nobios, 0);
+const rom = await (await fetch(fn)).bytes();
+mem.set(rom, 0x4000);
+if (mem[0x4000] != 0x41 || mem[0x4001] != 0x42) {
+  throw new Error("not MSX ROM id 'AB'");
+}
+
+const vdp = new VDPScreen1();
+main.appendChild(vdp);
+
+const kbd = new Keyboard(document.body);
+
+const psg = new PSG();
+btn_soundon.onclick = async () => await psg.startSound();
+btn_soundoff.onclick = async () => await psg.stopSound();
+
+const z80 = new Z80({
+  mem_read: (address) => {
+    //console.log("mem_read", address.toString(16));
+    return mem[address];
+  },
+  mem_write: (address, value) => {
+    //console.log("mem_write", address.toString(16), value);
+    if (address < 0xc000) return; // ROM
+    mem[address] = value;
+  },
+  io_read: (port) => {
+    //console.log("io read", port);
+    const kbdres = kbd.io_read(port);
+    if (kbdres !== undefined) return kbdres;
+    return 0;
+  },
+  io_write: (port, value) => {
+    //console.log("io write", port, value);
+    vdp.io_write(port, value);
+    kbd.io_write(port, value);
+    psg.io_write(port, value);
+  },
+});
+
+const z80freq = 3.579545; // MHz
+const fps = 60;
+const clkperframe = (z80freq / fps * 1000000) >> 0; // 59659
+
+const waitVSync = async () => new Promise(resolve => requestAnimationFrame(resolve));
+
+let running = false;
+const run = async () => {
+  if (running) return;
+  running = true;
+  z80.reset();
+  for (let i = 0xc000; i < 0x10000; i++) {
+    mem[i] = 0;
+  }
+  const st = z80.getState();
+  //st.pc = entry;
+  //console.log("entry", entry.toString(16));
+  st.imode = 1;
+  z80.setState(st);
+
+  let sumclk = 0;
+  while (running) {
+    //const st = z80.getState();
+    //console.log(z80disasm(mem, st.pc));
+    const clk = z80.run_instruction();
+    if (clk == 1) break; // halted
+    sumclk += clk;
+    if (sumclk > clkperframe) {
+      vdp.draw();
+      //await waitVSync();
+      await sleep(1000 / 60);
+      sumclk -= clkperframe;
+      z80.interrupt(false);
+    }
+  }
+  running = false;
+};
+run();
+
+btn_reset.onclick = () => {
+  if (running) {
+    running = false;
+  } else {
+    run();
+  }
+};
+
+</script>

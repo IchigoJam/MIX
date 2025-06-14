@@ -7,6 +7,7 @@
 with [NO-BIOS](https://github.com/IchigoJam/no-bios)
 - [vdp-test](https://ichigojam.github.io/MIX/vdp-test.html)
 - [kbd-test](https://ichigojam.github.io/MIX/kbd-test.html)
+- [psg-test](https://ichigojam.github.io/MIX/psg-test.html)
 
 ### BIOS compatible version
 
