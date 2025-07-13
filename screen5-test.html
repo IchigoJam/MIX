@@ -1,0 +1,159 @@
+<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><link rel="icon" href="data:">
+<title>SCREEN5 test without SPRITE</title></head><body>
+<h1>SCREEN5 test without SPRITE</h1>
+<canvas id="screen5" width="256" height="212"></canvas>
+<hr>
+<a href=https://github.com/ichigojam/MIX/>src on GitHub</a><br>
+
+<style>
+canvas {
+  height: 60vh;
+}
+</style>
+
+<script type="module">
+const canvas = document.getElementById("screen5");
+canvas.style.imageRendering = "pixelated";
+const gl = canvas.getContext("webgl2");
+
+if (!gl) {
+  alert("WebGL2 not supported.");
+}
+
+// 解像度とVRAMサイズ（1byte = 2px）
+const WIDTH = 256;
+const HEIGHT = 212;
+canvas.width = WIDTH;
+canvas.height = HEIGHT;
+const VRAM_W = WIDTH / 2; // 128
+const VRAM_H = HEIGHT;
+
+// 仮の VRAM データ（4bit × 2）
+const vram = new Uint8Array(VRAM_W * VRAM_H);
+for (let i = 0; i < vram.length; i++) {
+  //vram[i] = Math.floor(Math.random() * 256);
+  //vram[i] = i % VRAM_W == 0 ? Math.floor(Math.random() * 256) : 0;
+  vram[i] = Math.floor(i / VRAM_W) == 0 ? Math.floor(Math.random() * 256) : 0;
+}
+
+const fn = "UNO-H.SR5";
+//const fn = "UNO-C.SR5";
+const data = await (await fetch(fn)).bytes();
+console.log(data.length);
+for (let i = 0; i < vram.length; i++) {
+  vram[i] = data[i + 7];
+  //vram[vram.length - 1 - i] = data[i];
+}
+// パレット（0.0〜1.0 の RGB）
+/*const palette = [
+  [0,0,0],[0,0,1],[1,0,0],[1,0,1],[0,1,0],[0,1,1],[1,1,0],[1,1,1],
+  [0.5,0.5,0.5],[0,0,0.5],[0.5,0,0],[0.5,0,0.5],[0,0.5,0],[0,0.5,0.5],[0.5,0.5,0],[0.75,0.75,0.75]
+];
+*/
+const pl = "000,000,700,117,752,151,755,000,666,111,222,333,444,555,666,777".split(",");
+const palette = new Float32Array(pl.map(i => [i[0] / 7, i[1] / 7, i[2] / 7]).flat());
+
+// テクスチャ作成（1byte / texel）
+const tex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, tex);
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8UI, VRAM_W, VRAM_H, 0, gl.RED_INTEGER, gl.UNSIGNED_BYTE, vram);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+
+// 頂点シェーダー
+const vs = `#version 300 es
+in vec2 aPosition;
+out vec2 vUV;
+void main() {
+  vUV = (aPosition + 1.0) / 2.0;
+  gl_Position = vec4(aPosition, 0, 1);
+}`;
+
+// フラグメントシェーダー（bit演算使用）
+const fs = `#version 300 es
+precision mediump float;
+precision highp usampler2D;
+
+uniform usampler2D uTex;
+uniform vec3 uPalette[16];
+
+in vec2 vUV;
+out vec4 outColor;
+
+void main() {
+  ivec2 texSize = textureSize(uTex, 0);
+  int px = int(floor(vUV.x * 256.0));
+  int py = int(floor((1.0 - vUV.y) * 212.0));
+  ivec2 texCoord = ivec2(px / 2, py);
+
+  uint byteVal = texelFetch(uTex, texCoord, 0).r;
+  uint indexU = (px % 2 == 0) ? (byteVal >> 4u) : (byteVal & 0x0Fu);
+  int index = int(indexU);
+  outColor = vec4(uPalette[index], 1.0);
+}`;
+
+// シェーダー作成ユーティリティ
+function compileShader(type, src) {
+  const shader = gl.createShader(type);
+  gl.shaderSource(shader, src);
+  gl.compileShader(shader);
+  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(shader));
+  }
+  return shader;
+}
+
+// プログラム作成
+const program = gl.createProgram();
+gl.attachShader(program, compileShader(gl.VERTEX_SHADER, vs));
+gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, fs));
+gl.linkProgram(program);
+gl.useProgram(program);
+
+// 四角形のバッファ
+const quad = new Float32Array([-1,-1, 1,-1, -1,1, 1,-1, 1,1, -1,1]);
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, quad, gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(program, "aPosition");
+gl.enableVertexAttribArray(loc);
+gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+
+// アニメーション
+let frame = 0;
+let animation = false;
+const bkplt = new Float32Array(3);
+const draw = () => {
+  // 更新
+  if (animation && frame % 10 == 0) {
+    for (let i = 0; i < 3; i++) {
+      bkplt[i] = palette[i];
+    }
+    for (let i = 0; i < 15 * 3; i++) {
+      palette[i] = palette[i + 3];
+    }
+    for (let i = 0; i < 3; i++) {
+      palette[15 * 3 + i] = bkplt[i];
+    }
+  }
+
+  // パレット送信
+  gl.uniform3fv(gl.getUniformLocation(program, "uPalette"), palette);
+
+  // テクスチャバインド
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.uniform1i(gl.getUniformLocation(program, "uTex"), 0);
+  
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  frame++;
+  requestAnimationFrame(draw);
+};
+draw();
+
+document.body.onmousedown = () => animation = true;
+document.body.onmouseup = () => animation = false;
+
+</script>
